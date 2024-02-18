@@ -6,14 +6,19 @@ import json
 import time
 import pandas as pd
 import logging
+from os.path import join,dirname
+from dotenv import load_dotenv
+
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 class DataRetrieval:
-    apikey = "c2cc3730-aabd-482e-a16f-e911fd7439d2"
+    dotenv_path = join(dirname(__file__), '.env')
+    load_dotenv(dotenv_path)
+    apikey = os.environ.get("API_KEY")
 
     @classmethod
-    def delete_empties(cls, data):
+    def filter_empties(cls, data):
         """Metoda usuwa puste wpisy ze słownika"""
         result = []
         for item in data:
@@ -30,13 +35,14 @@ class DataRetrieval:
         result = result[result["VehicleNumber"].isin(busGroupBy)]
         return result
 
+    # TODO wyniesc do analysis
     @classmethod
     def load_bus_positions(cls, filename):
         """Wczytywanie pozycji autobusów z pliku"""
         with open(filename) as file:
             data = json.load(file)
-            data = cls.delete_empties(data)
-            data = cls.delete_different_dates(data, filename[-15:-5])
+            data = cls.filter_empties(data)
+            #data = cls.filter_different_dates(data, filename[-15:-5]) # TODO do innej funkcji
             dataFrame = pd.DataFrame.from_records(data)
             dataFrame = cls.delete_duplicate_positions(dataFrame)
         return dataFrame
@@ -48,16 +54,16 @@ class DataRetrieval:
         for i in range(minutes):
             response = requests.get(
                 "https://api.um.warszawa.pl/api/action/busestrams_get/?resource_id=f2e5503e927d-4ad3-9500"
-                "-4ab9e55deb59&apikey=" + cls.apikey + "&type=1")
+                "-4ab9e55deb59&apikey=" + cls.apikey + "&type=1") # TODO f"{}"
             if response.status_code == 200:
                 current_data = response.json()["result"]
                 result.append(current_data)
             else:
                 logging.info(response)
             time.sleep(60)
-        data = cls.delete_empties(result)
+        data = cls.filter_empties(result)
 
-        # dane są zapisywane w folderze resources, który jest umieszczony w folderze z kodem źródłowym
+        # folder przekazany jako argument funkcji
         if not os.path.exists("../resources"):
             os.mkdir("../resources")
         with open("../resources/data" + datetime.datetime.now().strftime('_%d-%m-%Y.json'), "w") as file:
@@ -93,12 +99,13 @@ class DataRetrieval:
         dataFrame = pd.DataFrame.from_records(temp)
         return dataFrame
 
+# TODO wyniesc stad
     @classmethod
     def load_stop_location(cls, filename):
         """Wczytywanie rozkładów jazdy z pliku"""
         with open(filename) as file:
             data = json.load(file)
-            data = cls.delete_empties(data)
+            data = cls.filter_empties(data)
             dataFrame = pd.DataFrame.from_records(data)
         return dataFrame
 
@@ -141,7 +148,7 @@ class DataRetrieval:
         logging.info(f"Collecting schedule for given slupek: {slupek} and line: {line}")
         response_lines = requests.get(
             f"https://api.um.warszawa.pl/api/action/dbtimetable_get/?id=e923fa0e-d96c-43f9-ae6e-60518c9f3238&busstopId={zespol}"
-            f"&busstopNr={slupek}&line={line}&apikey=c2cc3730-aabd-482e-a16f-e911fd7439d2") # TODO wywaliv api key
+            f"&busstopNr={slupek}&line={line}&apikey={cls.apikey}")
         if response_lines.status_code == 200:
             stop_lines = response_lines.json()["result"]
             temp = []
@@ -168,6 +175,7 @@ class DataRetrieval:
             list_of_schedules = []
         logging.info("Read list of schedules")
         counter = 0
+        # TODO moze dodac pd.apply, uwaga na limity api
         for index, record in stopsFrame.iterrows():
             counter += 1
             if counter % 100 == 0:
@@ -186,12 +194,12 @@ class DataRetrieval:
         """Wczytywanie rozkładów jazdy z pliku"""
         with open(filename) as file:
             data = json.load(file)
-            data = cls.delete_empties(data)
+            data = cls.filter_empties(data)
             dataFrame = pd.DataFrame.from_records(data)
         return dataFrame
 
     @classmethod
-    def delete_different_dates(cls, data, file_date):
+    def filter_different_dates(cls, data, file_date):
         result=[]
         for position in data:
             if file_date in position["Time"]:

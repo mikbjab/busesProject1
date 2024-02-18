@@ -1,23 +1,29 @@
+import logging
 import time
 
 import numpy as np
 import pandas as pd
+
 from transportanalysis.models.data_download import DataRetrieval
 
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 def haversine(lat1, lon1, lat2, lon2, to_radians=True, earth_radius=6371):
     """Funkcja pomocnicza mierząca odległość (km) między dwoma punktami opisanymi współrzędnymi geograficznymi"""
     if to_radians:
-        lat1 = np.radians(float(lat1))
-        lat2 = np.radians(float(lat2))
-        lon1 = np.radians(float(lon1))
-        lon2 = np.radians(float(lon2))
+        lat1 = np.radians(lat1)
+        lat2 = np.radians(lat2)
+        lon1 = np.radians(lon1)
+        lon2 = np.radians(lon2)
 
     a = np.sin((lat2 - lat1) / 2.0) ** 2 + \
         np.cos(lat1) * np.cos(lat2) * np.sin((lon2 - lon1) / 2.0) ** 2
 
     return earth_radius * 2 * np.arcsin(np.sqrt(a))
 
+
+def haversine_rows(rows: np.ndarray):
+    return haversine()
 
 def velocity(distance, time1, time2):
     """Funkcja pomocnicza licząca prędkość między dwoma położeniami autobusu"""
@@ -96,54 +102,70 @@ class Analysis:
         """ Sprawdzenie, czy wokół danego przystanku (schedule_row) był autobus tej linii i tej brygady,
             'w okolicy' definiujemy jako odległość 400 m w każdą stronę (z uwagi na pozycje aktualizowane co minutę)
         """
-        stop_position = self.stop_locations[(self.stop_locations["zespol"] == schedule_row.zespol)
-                                            & (self.stop_locations["slupek"] == schedule_row.slupek)]
+        logging.info("Analysing row")
         bus_positions = self.bus_data[(self.bus_data["Brigade"] == schedule_row.brygada)
                                       & (self.bus_data["Lines"] == schedule_row.linia)]
         if bus_positions.empty:
             return -1
 
+        stop_position = self.stop_locations[(self.stop_locations["zespol"] == schedule_row.zespol)
+                                            & (self.stop_locations["slupek"] == schedule_row.slupek)]
+
         time_range = get_time_range(schedule_row["czas"])
-        distances_near_time = []
         for index, bus_row in bus_positions.iterrows():
-            stop_distance = haversine(bus_row["Lat"], bus_row["Lon"],
-                                      stop_position["szer_geo"].iloc[0],
-                                      stop_position["dlug_geo"].iloc[0])
-            bus_time = int(bus_row["Time"].split(" ")[1].replace(":", "_"))
+            bus_time = int(bus_row["Time"].split(" ")[1].replace(":", ""))
             if time_range[0] < bus_time < time_range[1]:
-                distances_near_time.append([bus_time, stop_distance])
+                stop_distance = haversine(bus_row["Lat"], bus_row["Lon"],
+                                          stop_position["szer_geo"].iloc[0],
+                                          stop_position["dlug_geo"].iloc[0])
                 if stop_distance < 0.5:
                     return 0
         return 1
 
     def check_punctuality(self, schedule_filename):
+        logging.info("Starting punctuality check")
         begin_time = self.bus_data["Time"].min().split(" ")[1].replace(":", "_")
         if begin_time[0] == "0":
             begin_time = begin_time[1:]
         end_time = self.bus_data["Time"].max().split(" ")[1].replace(":", "_")
-        start = time.time()
+        # TODO filtrowanie w datafrme, nie w liscie
         schedule_frame = DataRetrieval.load_schedule(schedule_filename)
-        end = time.time()
-        print(end - start)
+        logging.info("Loaded schedules")
         schedule_frame["czas"] = schedule_frame["czas"].str.replace(":", "_").astype(int)
         schedule_frame = schedule_frame.query(f"{end_time}>czas>{begin_time}")
 
         on_time_statistics = {"Not found": 0, "On time": 0, "Late": 0}
-        start = time.time()
-        print(schedule_frame)
-        for index, row in schedule_frame.iterrows():
-            temp = self.is_near(row)
-            if temp == 0:
-                on_time_statistics["On time"] += 1
-            elif temp == 1:
-                on_time_statistics["Late"] += 1
-            else:
-                on_time_statistics["Not found"] += 1
-            end = time.time()
-            print(end - start)
+        logging.info("Analysing all buses and stations")
+
+        schedule_frame["punctuality"] = schedule_frame.apply(self.is_near, axis=1)
+        # for index, row in schedule_frame.iterrows():
+        #     logging.info("Analysing row")
+        #     temp = self.is_near(row)
+        #     if temp == 0:
+        #         on_time_statistics["On time"] += 1
+        #     elif temp == 1:
+        #         on_time_statistics["Late"] += 1
+        #     else:
+        #         on_time_statistics["Not found"] += 1
+
+        logging.info("Finished analysis")
         return on_time_statistics
 
 
+
+def load_bus_positions(filename) -> pd.DataFrame:
+    pass
+
 if __name__ == '__main__':
-    analysis = Analysis(filename="../resources/data_2024-02-17.json")
-    print(analysis.check_punctuality("../resources/schedules_08-02-2024.json"))
+
+    #  ETL
+    # extract (wcczytujesz z api
+    # transform (modyfikujesz)
+    # load (zapisujesz do bazki albo pliku)
+    filename = "../resources/data_2024-02-17.json"
+    bus_positions_pd = load_bus_positions(filename)
+
+
+    analysis_pd = Analysis(filename)
+
+    logging.info(analysis.check_punctuality("../resources/schedules_08-02-2024.json"))

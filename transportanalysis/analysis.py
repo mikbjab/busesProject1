@@ -31,15 +31,9 @@ def velocity(distance, time1, time2):
 
 
 def get_time_range(time):
-    time = str(time)
-    if len(time) == 6:
-        if int(time[:-5]) > 24:
-            time = str(int(time[:-5]) - 24) + time[-4:]
-    formatted_time = time
-    pd_time = pd.to_datetime(formatted_time, format="%H%M%S")
-    earlier_time = pd_time - pd.Timedelta(minutes=2)
-    later_time = pd_time + pd.Timedelta(minutes=2)
-    return [int(earlier_time.strftime('%H%M%S')), int(later_time.strftime('%H%M%S'))]
+    earlier_time = time - pd.Timedelta(minutes=2)
+    later_time = time + pd.Timedelta(minutes=2)
+    return [earlier_time.time(), later_time.time()]
 
 
 class Analysis:
@@ -109,32 +103,29 @@ class Analysis:
                                             & (self.stop_locations["slupek"] == schedule_row.slupek)]
 
         time_range = get_time_range(schedule_row["czas"])
-        for index, bus_row in bus_positions.iterrows():
-            bus_time = int(bus_row["Time"].split(" ")[1].replace(":", ""))
-            if time_range[0] < bus_time < time_range[1]:
-                stop_distance = haversine(bus_row["Lat"], bus_row["Lon"],
-                                          float(stop_position["szer_geo"].iloc[0]),
-                                          float(stop_position["dlug_geo"].iloc[0]))
-                if stop_distance < 0.5:
-                    return 0
+        index = pd.DatetimeIndex(bus_positions['Time'])
+        filtered_bus_positions = bus_positions.iloc[index.indexer_between_time(time_range[0], time_range[1])]
+        for index, bus_row in filtered_bus_positions.iterrows():
+            stop_distance = haversine(bus_row["Lat"], bus_row["Lon"],
+                                      float(stop_position["szer_geo"].iloc[0]),
+                                      float(stop_position["dlug_geo"].iloc[0]))
+            if stop_distance < 0.5:
+                return 0
         return 1
 
     def check_punctuality(self):
         logging.info("Starting punctuality check")
-        begin_time = self.bus_data["Time"].min().split(" ")[1].replace(":", "_")
-        if begin_time[0] == "0":
-            begin_time = begin_time[1:]
-        end_time = self.bus_data["Time"].max().split(" ")[1].replace(":", "_")
-        # TODO filtrowanie w datafrme, nie w liscie
         schedule_frame = self.schedule
         logging.info("Loaded schedules")
-        schedule_frame["czas"] = schedule_frame["czas"].str.replace(":", "_").astype(int)
-        schedule_frame = schedule_frame.query(f"{end_time}>czas>{begin_time}")
+
+        index = pd.DatetimeIndex(schedule_frame['czas'])
+        filtered_schedule = schedule_frame.iloc[index.indexer_between_time(self.bus_data["Time"].min().split(" ")[1],
+                                                                           self.bus_data["Time"].max().split(" ")[1])]
 
         on_time_statistics = {"Not found": 0, "On time": 0, "Late": 0}
         logging.info("Analysing all buses and stations")
 
-        schedule_frame["punctuality"] = schedule_frame.apply(self.is_near, axis=1)
+        filtered_schedule["punctuality"] = filtered_schedule.apply(self.is_near, axis=1)
         # for index, row in schedule_frame.iterrows():
         #     logging.info("Analysing row")
         #     temp = self.is_near(row)

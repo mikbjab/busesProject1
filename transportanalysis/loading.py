@@ -44,6 +44,7 @@ def load_schedule(filename):
         data = json.load(file)
         data = filter_empties(data)
         dataFrame = pd.DataFrame.from_records(data)
+        change_hours(dataFrame)
     return dataFrame
 
 
@@ -67,3 +68,15 @@ def load_stop_lines(filename):
 
 def load_date_from_file(filename):
     return filename[-15:-5]
+
+
+def change_time_format(time):
+    time_list = time.split(":")
+    if int(time_list[0]) >= 24:
+        time_list[0] = str(int(time_list[0])-24)
+    return ":".join(time_list)
+
+
+def change_hours(schedule):
+    schedule["czas"] = schedule["czas"].apply(change_time_format)
+    schedule["czas"]=pd.to_datetime(schedule["czas"],format="%H:%M:%S")

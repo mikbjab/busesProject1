@@ -20,7 +20,11 @@ if __name__ == "__main__":
     if args.stoploc:
         dd.DataRetrieval.collect_busstops_location()
     if args.buslines:
-        dd.DataRetrieval.collect_lines_all()
+        text=input("Are you sure? (it takes long time) [Y/N]: ")
+        if text.strip() == "Y":
+            dd.DataRetrieval.collect_lines_all()
     if args.schedule:
-        dd.DataRetrieval.collect_schedule_all()
+        text=input("Are you sure? (it takes a few hours) [Y/N]: ")
+        if text.strip() == "Y":
+            dd.DataRetrieval.collect_schedule_all()
 

@@ -79,7 +79,7 @@ class DataRetrieval:
             stop_lines = response_lines.json()["result"]
         else:
             logging.info(response_lines)
-
+        logging.info("Collecting line")
         assert response_lines.status_code == 200
         result = []
         for line in stop_lines:

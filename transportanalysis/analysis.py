@@ -122,19 +122,12 @@ class Analysis:
         filtered_schedule = schedule_frame.iloc[index.indexer_between_time(self.bus_data["Time"].min().split(" ")[1],
                                                                            self.bus_data["Time"].max().split(" ")[1])]
 
-        on_time_statistics = {"Not found": 0, "On time": 0, "Late": 0}
         logging.info("Analysing all buses and stations")
 
         filtered_schedule["punctuality"] = filtered_schedule.apply(self.is_near, axis=1)
-        # for index, row in schedule_frame.iterrows():
-        #     logging.info("Analysing row")
-        #     temp = self.is_near(row)
-        #     if temp == 0:
-        #         on_time_statistics["On time"] += 1
-        #     elif temp == 1:
-        #         on_time_statistics["Late"] += 1
-        #     else:
-        #         on_time_statistics["Not found"] += 1
+        on_time_statistics = {-1: (filtered_schedule["punctuality"] == -1).count(),
+                              0: (filtered_schedule["punctuality"] == 0).count(),
+                              1: (filtered_schedule["punctuality"] == 1).count()}
 
         logging.info("Finished analysis")
         return on_time_statistics

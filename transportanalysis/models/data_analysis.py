@@ -5,8 +5,10 @@ import numpy as np
 import pandas as pd
 
 from transportanalysis.models.data_download import DataRetrieval
+import loading
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+
 
 def haversine(lat1, lon1, lat2, lon2, to_radians=True, earth_radius=6371):
     """Funkcja pomocnicza mierząca odległość (km) między dwoma punktami opisanymi współrzędnymi geograficznymi"""
@@ -21,9 +23,6 @@ def haversine(lat1, lon1, lat2, lon2, to_radians=True, earth_radius=6371):
 
     return earth_radius * 2 * np.arcsin(np.sqrt(a))
 
-
-def haversine_rows(rows: np.ndarray):
-    return haversine()
 
 def velocity(distance, time1, time2):
     """Funkcja pomocnicza licząca prędkość między dwoma położeniami autobusu"""
@@ -46,13 +45,13 @@ def get_time_range(time):
 
 
 class Analysis:
-    def __init__(self, filename=""):
+    def __init__(self, temp_bus_positions_pd, temp_stop_locations_pd,temp_schedule_pd):
         # TODO wczytanie różnych danych
-        data = DataRetrieval.load_bus_positions(filename)
 
-        self.bus_data = data.sort_values(by=["VehicleNumber", "Time"])
-        self.stop_locations = DataRetrieval.load_stop_location("../resources/stops_locations_10-01-2024.json")
+        self.bus_data = temp_bus_positions_pd.sort_values(by=["VehicleNumber", "Time"])
+        self.stop_locations = temp_stop_locations_pd
         self.uniqueVehicles = self.bus_data.VehicleNumber.unique()
+        self.schedule=temp_schedule_pd
 
     def analise_speed(self, min_speed=0):
         speeding_buses = dict.fromkeys(self.uniqueVehicles)
@@ -122,14 +121,14 @@ class Analysis:
                     return 0
         return 1
 
-    def check_punctuality(self, schedule_filename):
+    def check_punctuality(self):
         logging.info("Starting punctuality check")
         begin_time = self.bus_data["Time"].min().split(" ")[1].replace(":", "_")
         if begin_time[0] == "0":
             begin_time = begin_time[1:]
         end_time = self.bus_data["Time"].max().split(" ")[1].replace(":", "_")
         # TODO filtrowanie w datafrme, nie w liscie
-        schedule_frame = DataRetrieval.load_schedule(schedule_filename)
+        schedule_frame = self.schedule
         logging.info("Loaded schedules")
         schedule_frame["czas"] = schedule_frame["czas"].str.replace(":", "_").astype(int)
         schedule_frame = schedule_frame.query(f"{end_time}>czas>{begin_time}")
@@ -152,20 +151,18 @@ class Analysis:
         return on_time_statistics
 
 
-
-def load_bus_positions(filename) -> pd.DataFrame:
-    pass
-
 if __name__ == '__main__':
-
     #  ETL
     # extract (wcczytujesz z api
     # transform (modyfikujesz)
     # load (zapisujesz do bazki albo pliku)
-    filename = "../resources/data_2024-02-17.json"
-    bus_positions_pd = load_bus_positions(filename)
+    bus_filename = "../resources/data_2024-02-17.json"
+    bus_positions_pd = loading.load_bus_positions(bus_filename)
+    stop_loc_filename="../resources/stops_locations_10-01-2024.json"
+    stop_locations_pd=loading.load_stop_location(stop_loc_filename)
+    schedule_filename="../resources/schedules_08-02-2024.json"
+    schedule_pd=loading.load_schedule(schedule_filename)
 
+    analysis_pd = Analysis(bus_positions_pd,stop_locations_pd,schedule_pd)
 
-    analysis_pd = Analysis(filename)
-
-    logging.info(analysis.check_punctuality("../resources/schedules_08-02-2024.json"))
+    logging.info(analysis_pd.check_punctuality())

@@ -6,46 +6,18 @@ import json
 import time
 import pandas as pd
 import logging
-from os.path import join,dirname
+from os.path import join, dirname
 from dotenv import load_dotenv
 
+import loading
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+
 
 class DataRetrieval:
     dotenv_path = join(dirname(__file__), '.env')
     load_dotenv(dotenv_path)
     apikey = os.environ.get("API_KEY")
-
-    @classmethod
-    def filter_empties(cls, data):
-        """Metoda usuwa puste wpisy ze słownika"""
-        result = []
-        for item in data:
-            if type(item) is dict:
-                result.append(item)
-        return result
-
-    @classmethod
-    def delete_duplicate_positions(cls, busFrame):
-        """Metoda usuwa powtórzone lokalizacje autobusów
-        oraz jeśli jest tylko jeden punkt związany z danym autobusem"""
-        result = busFrame.drop_duplicates(["VehicleNumber", "Time", "Lat"])
-        busGroupBy = result.groupby(result["VehicleNumber"]).filter(lambda x: len(x) > 1)["VehicleNumber"].tolist()
-        result = result[result["VehicleNumber"].isin(busGroupBy)]
-        return result
-
-    # TODO wyniesc do analysis
-    @classmethod
-    def load_bus_positions(cls, filename):
-        """Wczytywanie pozycji autobusów z pliku"""
-        with open(filename) as file:
-            data = json.load(file)
-            data = cls.filter_empties(data)
-            #data = cls.filter_different_dates(data, filename[-15:-5]) # TODO do innej funkcji
-            dataFrame = pd.DataFrame.from_records(data)
-            dataFrame = cls.delete_duplicate_positions(dataFrame)
-        return dataFrame
 
     @classmethod
     def collect_bus_location(cls, minutes):
@@ -54,23 +26,19 @@ class DataRetrieval:
         for i in range(minutes):
             response = requests.get(
                 "https://api.um.warszawa.pl/api/action/busestrams_get/?resource_id=f2e5503e927d-4ad3-9500"
-                "-4ab9e55deb59&apikey=" + cls.apikey + "&type=1") # TODO f"{}"
+                "-4ab9e55deb59&apikey=" + cls.apikey + "&type=1")  # TODO f"{}"
             if response.status_code == 200:
                 current_data = response.json()["result"]
                 result.append(current_data)
             else:
                 logging.info(response)
             time.sleep(60)
-        data = cls.filter_empties(result)
 
         # folder przekazany jako argument funkcji
         if not os.path.exists("../resources"):
             os.mkdir("../resources")
         with open("../resources/data" + datetime.datetime.now().strftime('_%d-%m-%Y.json'), "w") as file:
-            json.dump(data, file)
-
-        dataFrame = pd.DataFrame.from_records(data)
-        return dataFrame
+            json.dump(result, file)
 
     @classmethod
     def collect_busstops_location(cls):
@@ -96,18 +64,7 @@ class DataRetrieval:
             os.mkdir("../resources")
         with open("resources/stops_locations" + datetime.datetime.now().strftime('_%d-%m-%Y.json'), "w") as file:
             json.dump(temp, file)
-        dataFrame = pd.DataFrame.from_records(temp)
-        return dataFrame
 
-# TODO wyniesc stad
-    @classmethod
-    def load_stop_location(cls, filename):
-        """Wczytywanie rozkładów jazdy z pliku"""
-        with open(filename) as file:
-            data = json.load(file)
-            data = cls.filter_empties(data)
-            dataFrame = pd.DataFrame.from_records(data)
-        return dataFrame
 
     @classmethod
     def collect_lines_single(cls, zespol, slupek):
@@ -140,8 +97,6 @@ class DataRetrieval:
             os.mkdir("../resources")
         stops_lines.to_json("resources/stops_lines" + datetime.datetime.now().strftime('_%d-%m-%Y.json'),
                             orient="columns")
-        return stops_lines
-
     @classmethod
     def collect_schedule_single(cls, zespol, slupek, line):
         """Metoda wczytująca rozkład dla konkretnego przystanku dla konkretnej linii"""
@@ -169,10 +124,8 @@ class DataRetrieval:
 
     @classmethod
     def collect_schedule_all(cls):
-        with open("../resources/stops_lines_06-02-2024.json") as file:
-            data = json.load(file)
-            stopsFrame = pd.DataFrame.from_records(data)
-            list_of_schedules = []
+        stopsFrame=loading.load_stop_lines("../resources/stops_lines_06-02-2024.json")
+        list_of_schedules=[]
         logging.info("Read list of schedules")
         counter = 0
         # TODO moze dodac pd.apply, uwaga na limity api
@@ -187,24 +140,6 @@ class DataRetrieval:
             os.mkdir("../resources")
         all_schedules.to_json("../resources/schedules" + datetime.datetime.now().strftime('_%d-%m-%Y.json'),
                               orient="records")
-        return all_schedules
-
-    @classmethod
-    def load_schedule(cls, filename):
-        """Wczytywanie rozkładów jazdy z pliku"""
-        with open(filename) as file:
-            data = json.load(file)
-            data = cls.filter_empties(data)
-            dataFrame = pd.DataFrame.from_records(data)
-        return dataFrame
-
-    @classmethod
-    def filter_different_dates(cls, data, file_date):
-        result=[]
-        for position in data:
-            if file_date in position["Time"]:
-                result.append(position)
-        return result
 
 
 if __name__ == '__main__':

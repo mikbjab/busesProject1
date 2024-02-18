@@ -134,12 +134,8 @@ class DataRetrieval:
         stopsFrame = loading.load_stop_lines("../data/stops_lines_06-02-2024.json")
         list_of_schedules = []
         logging.info("Read list of schedules")
-        counter = 0
-        # TODO moze dodac pd.apply, uwaga na limity api
+
         for index, record in stopsFrame.iterrows():
-            counter += 1
-            if counter % 100 == 0:
-                logging.info(counter)
             for line in record["Linie"]:
                 list_of_schedules.append(cls.collect_schedule_single(record["zespol"], record["slupek"], line))
         all_schedules = pd.concat(list_of_schedules, ignore_index=True)
@@ -147,10 +143,10 @@ class DataRetrieval:
         data_path = cls.project_path.joinpath("data")
         if not data_path.exists():
             data_path.mkdir()
-        all_schedules.to_json(data_path.joinpath(f"schedules{datetime.datetime.now().strftime('_%d-%m-%Y.json')}"),
+        all_schedules.to_json(data_path.joinpath(f"schedules{datetime.datetime.now().strftime('_%Y-%m-%d.json')}"),
                               orient="records")
 
 
 if __name__ == '__main__':
     # read input e.g. file name with data
-    logging.info(DataRetrieval.collect_busstops_location())
+    logging.info(DataRetrieval.collect_schedule_all())

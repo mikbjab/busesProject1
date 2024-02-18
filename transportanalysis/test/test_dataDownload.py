@@ -1,12 +1,9 @@
-import pytest
 import pandas as pd
-
-from transportanalysis.models.data_download import DataRetrieval
 
 
 def test_delete_empties(data_retrieval):
     data = [1, 2, {}, {'a': 1}, []]
-    assert data_retrieval.delete_empties(data) == [{'a': 1}]
+    assert data_retrieval.filter_empties(data) == [{'a': 1}]
 
 
 def test_delete_duplicate_positions(data_retrieval):

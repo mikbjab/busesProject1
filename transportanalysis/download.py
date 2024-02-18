@@ -35,9 +35,9 @@ class DataRetrieval:
             time.sleep(60)
 
         # folder przekazany jako argument funkcji
-        if not os.path.exists("../resources"):
-            os.mkdir("../resources")
-        with open("../resources/data" + datetime.datetime.now().strftime('_%d-%m-%Y.json'), "w") as file:
+        if not os.path.exists("../data"):
+            os.mkdir("../data")
+        with open("../data/data" + datetime.datetime.now().strftime('_%d-%m-%Y.json'), "w") as file:
             json.dump(result, file)
 
     @classmethod
@@ -60,9 +60,9 @@ class DataRetrieval:
             temp.append(copy.deepcopy(temp_dict))
             temp_dict = dict()
 
-        if not os.path.exists("../resources"):
-            os.mkdir("../resources")
-        with open("resources/stops_locations" + datetime.datetime.now().strftime('_%d-%m-%Y.json'), "w") as file:
+        if not os.path.exists("../data"):
+            os.mkdir("../data")
+        with open("data/stops_locations" + datetime.datetime.now().strftime('_%d-%m-%Y.json'), "w") as file:
             json.dump(temp, file)
 
 
@@ -86,16 +86,16 @@ class DataRetrieval:
     @classmethod
     def collect_lines_all(cls):
         """Metoda zapisująca linie autobusowe dla każdego przystanku"""
-        with open("../resources/stops_locations_10-01-2024.json", "r") as file:
+        with open("../data/stops_locations_10-01-2024.json", "r") as file:
             data = json.load(file)
         dataFrame = pd.DataFrame.from_records(data)
         stops_lines = dataFrame[["zespol", "slupek"]]
         stops_lines["Linie"] = stops_lines.apply(lambda row: cls.collect_lines_single(row["zespol"], row["slupek"]),
                                                  axis=1)
 
-        if not os.path.exists("../resources"):
-            os.mkdir("../resources")
-        stops_lines.to_json("resources/stops_lines" + datetime.datetime.now().strftime('_%d-%m-%Y.json'),
+        if not os.path.exists("../data"):
+            os.mkdir("../data")
+        stops_lines.to_json("data/stops_lines" + datetime.datetime.now().strftime('_%d-%m-%Y.json'),
                             orient="columns")
     @classmethod
     def collect_schedule_single(cls, zespol, slupek, line):
@@ -124,7 +124,7 @@ class DataRetrieval:
 
     @classmethod
     def collect_schedule_all(cls):
-        stopsFrame=loading.load_stop_lines("../resources/stops_lines_06-02-2024.json")
+        stopsFrame=loading.load_stop_lines("../data/stops_lines_06-02-2024.json")
         list_of_schedules=[]
         logging.info("Read list of schedules")
         counter = 0
@@ -136,9 +136,9 @@ class DataRetrieval:
             for line in record["Linie"]:
                 list_of_schedules.append(cls.collect_schedule_single(record["zespol"], record["slupek"], line))
         all_schedules = pd.concat(list_of_schedules, ignore_index=True)
-        if not os.path.exists("../resources"):
-            os.mkdir("../resources")
-        all_schedules.to_json("../resources/schedules" + datetime.datetime.now().strftime('_%d-%m-%Y.json'),
+        if not os.path.exists("../data"):
+            os.mkdir("../data")
+        all_schedules.to_json("../data/schedules" + datetime.datetime.now().strftime('_%d-%m-%Y.json'),
                               orient="records")
 
 

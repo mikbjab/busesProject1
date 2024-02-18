@@ -1,10 +1,8 @@
 import logging
-import time
 
 import numpy as np
 import pandas as pd
 
-from transportanalysis.models.data_download import DataRetrieval
 import loading
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
@@ -156,11 +154,11 @@ if __name__ == '__main__':
     # extract (wcczytujesz z api
     # transform (modyfikujesz)
     # load (zapisujesz do bazki albo pliku)
-    bus_filename = "../resources/data_2024-02-17.json"
+    bus_filename = "../data/data_2024-02-17.json"
     bus_positions_pd = loading.load_bus_positions(bus_filename)
-    stop_loc_filename="../resources/stops_locations_10-01-2024.json"
+    stop_loc_filename= "../data/stops_locations_10-01-2024.json"
     stop_locations_pd=loading.load_stop_location(stop_loc_filename)
-    schedule_filename="../resources/schedules_08-02-2024.json"
+    schedule_filename= "../data/schedules_08-02-2024.json"
     schedule_pd=loading.load_schedule(schedule_filename)
 
     analysis_pd = Analysis(bus_positions_pd,stop_locations_pd,schedule_pd)

@@ -2,7 +2,6 @@ import pytest
 from unittest.mock import patch
 import numpy as np
 import pandas as pd
-from transportanalysis.models import data_analysis
 
 
 @pytest.fixture

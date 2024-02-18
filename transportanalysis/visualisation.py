@@ -1,7 +1,7 @@
 import folium
 import matplotlib.pyplot as plt
-import transportanalysis.models.data_analysis as da
-import loading
+import transportanalysis.analysis as da
+from transportanalysis import loading
 
 
 class DataVisual:
@@ -50,9 +50,9 @@ class DataVisual:
 
 
 if __name__ == '__main__':
-    analysis = da.Analysis(loading.load_bus_positions("../resources/data_2024-02-17.json"),
-                           loading.load_stop_location("../resources/stops_locations_10-01-2024.json"),
-                           loading.load_schedule("../resources/schedules_08-02-2024.json"))
+    analysis = da.Analysis(loading.load_bus_positions("../data/data_2024-02-17.json"),
+                           loading.load_stop_location("../data/stops_locations_10-01-2024.json"),
+                           loading.load_schedule("../data/schedules_08-02-2024.json"))
     DataVisual.show_speed_histogram(analysis.analise_speed()[0])
     DataVisual.clusters(analysis.analise_clusters())
     DataVisual.speeding_map(analysis.analise_speed(50)[0])

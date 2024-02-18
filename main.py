@@ -14,11 +14,10 @@ if __name__ == "__main__":
                                                                          "given period")
 
     args = parser.parse_args()
-    analysis = da.Analysis(loading.load_bus_positions("../data/data_2024-02-17.json"),
-                           loading.load_stop_location("../data/stops_locations_10-01-2024.json"),
-                           loading.load_schedule("../data/schedules_08-02-2024.json"))
+    analysis = da.Analysis(loading.load_bus_positions(args.buses_positions),
+                           loading.load_stop_location("data/stops_locations_10-01-2024.json"),
+                           loading.load_schedule("data/schedules_08-02-2024.json"))
     if args.speed:
-        dv.DataVisual.speeding_map(analysis.analise_speed()[0])
         dv.DataVisual.speeding_map(analysis.analise_speed(50)[0])
     if args.clusters:
         dv.DataVisual.clusters(analysis.analise_clusters())

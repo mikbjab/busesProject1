@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-import loading
+from transportanalysis import loading
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 

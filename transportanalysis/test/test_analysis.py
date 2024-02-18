@@ -2,16 +2,21 @@ import pytest
 from unittest.mock import patch
 import numpy as np
 import pandas as pd
-
+import transportanalysis.analysis as ta
 
 @pytest.fixture
 def analysis():
-    return analysis.Analysis("test_data.json")  # Provide test data file
+    return ta.Analysis("test_data.json")  # Provide test data file
 
 
-def test_haversine():
+def test_haversine_good():
     # Test for haversine function
-    assert np.isclose(analysis.haversine(52.2296756, 21.0122287, 52.406374, 16.9251681), 278.45817507541943)
+    assert np.isclose(ta.haversine(52.2296756, 21.0122287, 52.406374, 16.9251681), 278.45817507541943)
+
+
+def test_haversine_wrong_format():
+    # Test for haversine function
+    pytest.raises(TypeError, ta.haversine,"A", 21.0122287, 52.406374, 16.9251681)
 
 
 def test_velocity():
@@ -19,13 +24,13 @@ def test_velocity():
     distance = 100  # in km
     time1 = "2024-01-01 12:00:00"
     time2 = "2024-01-01 13:00:00"
-    assert analysis.velocity(distance, time1, time2) == 100  # Speed should be 100 km/h
+    assert ta.velocity(distance, time1, time2) == 100  # Speed should be 100 km/h
 
 
 def test_get_time_range():
     # Test for get_time_range function
-    assert analysis.get_time_range("120000") == [115800, 120200]
-    assert analysis.get_time_range("002000") == [1800, 2200]
+    assert ta.get_time_range("120000") == [115800, 120200]
+    assert ta.get_time_range("002000") == [1800, 2200]
 
 
 def test_analise_speed(analysis):

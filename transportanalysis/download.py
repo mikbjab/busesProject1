@@ -10,7 +10,7 @@ from os.path import join
 from dotenv import load_dotenv
 from pathlib import Path
 
-import loading
+from transportanalysis import loading
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
@@ -69,8 +69,6 @@ class DataRetrieval:
         else:
             logging.info(response_stops_location)
 
-
-
     @classmethod
     def collect_lines_single(cls, zespol, slupek):
         """Metoda wczytująca z API linie przechodzące przez konkretny przystanek"""
@@ -91,7 +89,7 @@ class DataRetrieval:
     @classmethod
     def collect_lines_all(cls):
         """Metoda zapisująca linie autobusowe dla każdego przystanku"""
-        with open("../data/stops_locations_10-01-2024.json", "r") as file:
+        with open(cls.find_latest_file("stops_locations"), "r") as file:
             data = json.load(file)
         dataFrame = pd.DataFrame.from_records(data)
         stops_lines = dataFrame[["zespol", "slupek"]]
@@ -131,7 +129,7 @@ class DataRetrieval:
 
     @classmethod
     def collect_schedule_all(cls):
-        stopsFrame = loading.load_stop_lines("../data/stops_lines_06-02-2024.json")
+        stopsFrame = loading.load_stop_lines(cls.find_latest_file("stops_lines"))
         list_of_schedules = []
         logging.info("Read list of schedules")
 
@@ -145,6 +143,16 @@ class DataRetrieval:
             data_path.mkdir()
         all_schedules.to_json(data_path.joinpath(f"schedules{datetime.datetime.now().strftime('_%Y-%m-%d.json')}"),
                               orient="records")
+
+    @classmethod
+    def find_latest_file(cls,filename):
+        data_path = cls.project_path.joinpath("data")
+        files = os.listdir(data_path)
+        paths = []
+        for basename in files:
+            if filename in basename:
+                paths.append(os.path.join(data_path, basename))
+        return max(paths, key=os.path.getctime)
 
 
 if __name__ == '__main__':

@@ -52,13 +52,18 @@ def load_bus_positions(filename):
     with open(filename) as file:
         data = json.load(file)
         data = filter_empties(data)
-        # data = cls.filter_different_dates(data, filename[-15:-5]) # TODO do innej funkcji
+        data = filter_different_dates(data, load_date_from_file(filename))
         dataFrame = pd.DataFrame.from_records(data)
         dataFrame = delete_duplicate_positions(dataFrame)
     return dataFrame
+
 
 def load_stop_lines(filename):
     with open(filename) as file:
         data = json.load(file)
         stopsFrame = pd.DataFrame.from_records(data)
         return stopsFrame
+
+
+def load_date_from_file(filename):
+    return filename[-15:-5]

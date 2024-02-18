@@ -43,13 +43,13 @@ def get_time_range(time):
 
 
 class Analysis:
-    def __init__(self, temp_bus_positions_pd, temp_stop_locations_pd,temp_schedule_pd):
+    def __init__(self, temp_bus_positions_pd, temp_stop_locations_pd, temp_schedule_pd):
         # TODO wczytanie różnych danych
 
         self.bus_data = temp_bus_positions_pd.sort_values(by=["VehicleNumber", "Time"])
         self.stop_locations = temp_stop_locations_pd
         self.uniqueVehicles = self.bus_data.VehicleNumber.unique()
-        self.schedule=temp_schedule_pd
+        self.schedule = temp_schedule_pd
 
     def analise_speed(self, min_speed=0):
         speeding_buses = dict.fromkeys(self.uniqueVehicles)
@@ -113,8 +113,8 @@ class Analysis:
             bus_time = int(bus_row["Time"].split(" ")[1].replace(":", ""))
             if time_range[0] < bus_time < time_range[1]:
                 stop_distance = haversine(bus_row["Lat"], bus_row["Lon"],
-                                          stop_position["szer_geo"].iloc[0],
-                                          stop_position["dlug_geo"].iloc[0])
+                                          float(stop_position["szer_geo"].iloc[0]),
+                                          float(stop_position["dlug_geo"].iloc[0]))
                 if stop_distance < 0.5:
                     return 0
         return 1
@@ -156,11 +156,11 @@ if __name__ == '__main__':
     # load (zapisujesz do bazki albo pliku)
     bus_filename = "../data/data_2024-02-17.json"
     bus_positions_pd = loading.load_bus_positions(bus_filename)
-    stop_loc_filename= "../data/stops_locations_10-01-2024.json"
-    stop_locations_pd=loading.load_stop_location(stop_loc_filename)
-    schedule_filename= "../data/schedules_08-02-2024.json"
-    schedule_pd=loading.load_schedule(schedule_filename)
+    stop_loc_filename = "../data/stops_locations_10-01-2024.json"
+    stop_locations_pd = loading.load_stop_location(stop_loc_filename)
+    schedule_filename = "../data/schedules_08-02-2024.json"
+    schedule_pd = loading.load_schedule(schedule_filename)
 
-    analysis_pd = Analysis(bus_positions_pd,stop_locations_pd,schedule_pd)
+    analysis_pd = Analysis(bus_positions_pd, stop_locations_pd, schedule_pd)
 
     logging.info(analysis_pd.check_punctuality())

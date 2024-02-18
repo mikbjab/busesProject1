@@ -5,7 +5,9 @@ import requests
 import json
 import time
 import pandas as pd
+import logging
 
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 class DataRetrieval:
     apikey = "c2cc3730-aabd-482e-a16f-e911fd7439d2"
@@ -51,7 +53,7 @@ class DataRetrieval:
                 current_data = response.json()["result"]
                 result.append(current_data)
             else:
-                print(response)
+                logging.info(response)
             time.sleep(60)
         data = cls.delete_empties(result)
 
@@ -73,7 +75,7 @@ class DataRetrieval:
         if response_stops_location.status_code == 200:
             stops_location = response_stops_location.json()["result"]
         else:
-            print(response_stops_location)
+            logging.info(response_stops_location)
 
         temp = []
         temp_dict = dict()
@@ -109,7 +111,7 @@ class DataRetrieval:
         if response_lines.status_code == 200:
             stop_lines = response_lines.json()["result"]
         else:
-            print(response_lines)
+            logging.info(response_lines)
 
         assert response_lines.status_code == 200
         result = []
@@ -134,11 +136,12 @@ class DataRetrieval:
         return stops_lines
 
     @classmethod
-    def collect_schedule_single(cls, zespol, slupek, linie):
+    def collect_schedule_single(cls, zespol, slupek, line):
         """Metoda wczytująca rozkład dla konkretnego przystanku dla konkretnej linii"""
+        logging.info(f"Collecting schedule for given slupek: {slupek} and line: {line}")
         response_lines = requests.get(
             f"https://api.um.warszawa.pl/api/action/dbtimetable_get/?id=e923fa0e-d96c-43f9-ae6e-60518c9f3238&busstopId={zespol}"
-            f"&busstopNr={slupek}&line={linie}&apikey=c2cc3730-aabd-482e-a16f-e911fd7439d2")
+            f"&busstopNr={slupek}&line={line}&apikey=c2cc3730-aabd-482e-a16f-e911fd7439d2") # TODO wywaliv api key
         if response_lines.status_code == 200:
             stop_lines = response_lines.json()["result"]
             temp = []
@@ -152,10 +155,10 @@ class DataRetrieval:
             scheduleFrame = pd.DataFrame.from_records(temp)
             scheduleFrame["zespol"] = zespol
             scheduleFrame["slupek"] = slupek
-            scheduleFrame["linia"] = linie
+            scheduleFrame["linia"] = line
             return scheduleFrame
         else:
-            print(response_lines)
+            logging.info(response_lines)
 
     @classmethod
     def collect_schedule_all(cls):
@@ -163,11 +166,12 @@ class DataRetrieval:
             data = json.load(file)
             stopsFrame = pd.DataFrame.from_records(data)
             list_of_schedules = []
+        logging.info("Read list of schedules")
         counter = 0
         for index, record in stopsFrame.iterrows():
             counter += 1
             if counter % 100 == 0:
-                print(counter)
+                logging.info(counter)
             for line in record["Linie"]:
                 list_of_schedules.append(cls.collect_schedule_single(record["zespol"], record["slupek"], line))
         all_schedules = pd.concat(list_of_schedules, ignore_index=True)
@@ -196,4 +200,5 @@ class DataRetrieval:
 
 
 if __name__ == '__main__':
-    print(DataRetrieval.collect_schedule_all())
+    # read input e.g. file name with data
+    logging.info(DataRetrieval.collect_schedule_all())

@@ -6,12 +6,12 @@ import pandas as pd
 
 @pytest.fixture
 def analysis():
-    return data_analysis.Analysis("test_data.json")  # Provide test data file
+    return analysis.Analysis("test_data.json")  # Provide test data file
 
 
 def test_haversine():
     # Test for haversine function
-    assert np.isclose(data_analysis.haversine(52.2296756, 21.0122287, 52.406374, 16.9251681), 278.45817507541943)
+    assert np.isclose(analysis.haversine(52.2296756, 21.0122287, 52.406374, 16.9251681), 278.45817507541943)
 
 
 def test_velocity():
@@ -19,13 +19,13 @@ def test_velocity():
     distance = 100  # in km
     time1 = "2024-01-01 12:00:00"
     time2 = "2024-01-01 13:00:00"
-    assert data_analysis.velocity(distance, time1, time2) == 100  # Speed should be 100 km/h
+    assert analysis.velocity(distance, time1, time2) == 100  # Speed should be 100 km/h
 
 
 def test_get_time_range():
     # Test for get_time_range function
-    assert data_analysis.get_time_range("120000") == [115800, 120200]
-    assert data_analysis.get_time_range("002000") == [1800, 2200]
+    assert analysis.get_time_range("120000") == [115800, 120200]
+    assert analysis.get_time_range("002000") == [1800, 2200]
 
 
 def test_analise_speed(analysis):

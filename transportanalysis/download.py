@@ -6,7 +6,7 @@ import json
 import time
 import pandas as pd
 import logging
-from os.path import join, dirname
+from os.path import join
 from dotenv import load_dotenv
 from pathlib import Path
 

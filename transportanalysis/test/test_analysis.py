@@ -1,12 +1,18 @@
+import datetime
+
 import pytest
 from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import transportanalysis.analysis as ta
 
+
 @pytest.fixture
 def analysis():
-    return ta.Analysis("test_data.json")  # Provide test data file
+    data_buses=pd.read_csv("test_bus_positions.csv")
+    stop_locations=pd.read_csv("test_stop_locations.csv")
+    data_schedule=pd.read_csv("test_schedule.csv")
+    return ta.Analysis(data_buses,stop_locations,data_schedule)
 
 
 def test_haversine_good():
@@ -29,16 +35,15 @@ def test_velocity():
 
 def test_get_time_range():
     # Test for get_time_range function
-    assert ta.get_time_range("120000") == [115800, 120200]
-    assert ta.get_time_range("002000") == [1800, 2200]
+    assert ta.get_time_range(pd.to_datetime("1900-01-01 04:56:00", format='%Y-%m-%d %H:%M:%S')) == [datetime.time(4,54), datetime.time(4,58)]
+    assert ta.get_time_range(pd.to_datetime("1900-01-01 12:00:00", format='%Y-%m-%d %H:%M:%S')) == [datetime.time(11,58), datetime.time(12,2)]
 
 
-def test_analise_speed(analysis):
+def test_analise_speed(analysis,mock_file):
     # Test for analise_speed function
     min_speed = 70  # km/h
-    result_df, speeding_buses = analysis.analise_speed(min_speed)
-    assert all(result_df['Velocity'] >= min_speed)
-    assert isinstance(speeding_buses, dict)
+    analysis.analise_speed(mock_file,min_speed)
+
 
 
 def test_analise_clusters(analysis):

@@ -40,8 +40,6 @@ def get_time_range(time):
 
 class Analysis:
     def __init__(self, temp_bus_positions_pd, temp_stop_locations_pd, temp_schedule_pd):
-        # TODO wczytanie różnych danych
-
         self.bus_data = temp_bus_positions_pd.sort_values(by=["VehicleNumber", "Time"])
         self.stop_locations = temp_stop_locations_pd
         self.uniqueVehicles = self.bus_data.VehicleNumber.unique()
@@ -164,4 +162,4 @@ if __name__ == '__main__':
 
     analysis_pd = Analysis(bus_positions_pd, stop_locations_pd, schedule_pd)
 
-    logging.info(analysis_pd.analise_clusters("../data/clusters_data_2024-02-17.json"))
+    logging.info(analysis_pd.check_punctuality("../data/punctuality_2024-02-17.json"))

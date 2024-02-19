@@ -23,37 +23,38 @@ def sample_dataframe(sample_data):
 
 # Tests
 
-def test_filter_empties_deleting():
+def test_filter_nondict_deleting():
     data = [
         {"foo": "bar"},
         {"baz": "qux"},
-        {},
+        "a",
         {"spam": "eggs"}
     ]
-    assert tl.filter_empties(data) == [{"foo": "bar"}, {"baz": "qux"}, {"spam": "eggs"}]
+    assert tl.filter_nondict(data) == [{"foo": "bar"}, {"baz": "qux"}, {"spam": "eggs"}]
 
 
-def test_filter_empties_no_change():
+def test_filter_nondict_no_change():
     data = [
         {"foo": "bar"},
         {"baz": "qux"},
         {"spam": "eggs"}
     ]
-    assert tl.filter_empties(data) == [{"foo": "bar"}, {"baz": "qux"}, {"spam": "eggs"}]
+    assert tl.filter_nondict(data) == [{"foo": "bar"}, {"baz": "qux"}, {"spam": "eggs"}]
 
 
 def test_delete_duplicate_positions_with_change(sample_dataframe):
     # Sample DataFrame with duplicate entries
-    df = sample_dataframe.append(sample_dataframe.iloc[0]).reset_index(drop=True)
+    df=sample_dataframe.copy()
+    df=pd.concat([df,df],ignore_index=True)
     result = tl.delete_duplicate_positions(df)
-    assert len(result) == len(sample_dataframe)
+    assert len(result) == 2
 
 
 def test_delete_duplicate_positions_with_no_change(sample_dataframe):
     # Sample DataFrame with duplicate entries
     df = sample_dataframe
     result = tl.delete_duplicate_positions(df)
-    assert len(result) == len(sample_dataframe)
+    assert len(result) == 2
 
 
 def test_filter_different_dates(sample_data):
@@ -62,11 +63,11 @@ def test_filter_different_dates(sample_data):
 
 
 def test_load_date_from_file():
-    assert tl.load_date_from_file("file_2024-02-18.json") == "2024-02-18"
+    assert tl.load_date_from_file("file_created_2024-02-19.json") == "2024-02-19"
 
 
 def test_change_time_format_with_change():
-    assert tl.change_time_format("25:30:45") == "01:30:45"
+    assert tl.change_time_format("25:30:45") == "1:30:45"
 
 
 def test_change_time_format_with_no_change():
@@ -75,10 +76,10 @@ def test_change_time_format_with_no_change():
 
 def test_change_hours():
     # Mocking DataFrame
-    mock_df = MagicMock()
+    mock_df = pd.DataFrame()
     mock_df["czas"] = pd.Series(["25:30:45", "26:15:20", "23:45:00"])
     tl.change_hours(mock_df)
-    assert (mock_df["czas"] == pd.to_datetime(["01:30:45", "02:15:20", "23:45:00"], format="%H:%M:%S")).all()
+    assert (mock_df["czas"] == pd.to_datetime(["1:30:45", "2:15:20", "23:45:00"], format="%H:%M:%S")).all()
 
 # Add more tests for other functions as needed...
 

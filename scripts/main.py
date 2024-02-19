@@ -6,7 +6,7 @@ import transportanalysis.visualisation as dv
 from transportanalysis import loading
 
 
-def main():
+def main(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("buses_positions")
     parser.add_argument("-s", "--speed", action='store_true',
@@ -18,7 +18,7 @@ def main():
 
     args = parser.parse_args()
 
-    file_path = Path(__file__).parent
+    file_path = Path(__file__).parent.parent
     data_dir_path = file_path.joinpath("data")
     analysis = da.Analysis(loading.load_bus_positions(args.buses_positions),
                            loading.load_stop_location(loading.find_latest_file(data_dir_path, "stops_locations")),

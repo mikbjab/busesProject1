@@ -35,7 +35,7 @@ def load_stop_location(filename):
         data = json.load(file)
         data = filter_empties(data)
         dataFrame = pd.DataFrame.from_records(data)
-    return dataFrame
+        return dataFrame
 
 
 def load_schedule(filename):
@@ -45,7 +45,7 @@ def load_schedule(filename):
         data = filter_empties(data)
         dataFrame = pd.DataFrame.from_records(data)
         change_hours(dataFrame)
-    return dataFrame
+        return dataFrame
 
 
 def load_bus_positions(filename):
@@ -56,7 +56,21 @@ def load_bus_positions(filename):
         data = filter_different_dates(data, load_date_from_file(filename))
         dataFrame = pd.DataFrame.from_records(data)
         dataFrame = delete_duplicate_positions(dataFrame)
-    return dataFrame
+        return dataFrame
+
+
+def load_bus_speeds(filename):
+    """Wczytywanie pozycji autobusów z pliku z uwzględnieniem prędkości autobusów"""
+    with open(filename) as file:
+        data = json.load(file)
+        dataFrame = pd.DataFrame.from_records(data)
+        return dataFrame
+
+
+def load_json(filename):
+    with open(filename) as file:
+        clusters = json.load(file)
+        return clusters
 
 
 def load_stop_lines(filename):
@@ -73,10 +87,10 @@ def load_date_from_file(filename):
 def change_time_format(time):
     time_list = time.split(":")
     if int(time_list[0]) >= 24:
-        time_list[0] = str(int(time_list[0])-24)
+        time_list[0] = str(int(time_list[0]) - 24)
     return ":".join(time_list)
 
 
 def change_hours(schedule):
     schedule["czas"] = schedule["czas"].apply(change_time_format)
-    schedule["czas"]=pd.to_datetime(schedule["czas"],format="%H:%M:%S")
+    schedule["czas"] = pd.to_datetime(schedule["czas"], format="%H:%M:%S")

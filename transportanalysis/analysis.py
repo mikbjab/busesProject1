@@ -1,4 +1,6 @@
+import json
 import logging
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -45,7 +47,7 @@ class Analysis:
         self.uniqueVehicles = self.bus_data.VehicleNumber.unique()
         self.schedule = temp_schedule_pd
 
-    def analise_speed(self, min_speed=0):
+    def analise_speed(self, filename, min_speed=0):
         speeding_buses = dict.fromkeys(self.uniqueVehicles)
         result = []
         for vehicle in self.uniqueVehicles:
@@ -57,10 +59,18 @@ class Analysis:
             result.append(vehicle_frame)
             speeding_buses[vehicle] = len(vehicle_frame.query("100>Velocity>50"))
         velocity_frame = pd.concat(result, ignore_index=True)
-        return velocity_frame.query(f"100>Velocity>{min_speed}"), speeding_buses
 
-    def analise_clusters(self, distance=1):
-        speed_frame = self.analise_speed()[0]
+        velocity_frame.query(f"100>Velocity>{min_speed}").to_json(filename, orient="records")
+        with open("info_" + filename, "w") as file:
+            json.dump(speeding_buses, file)
+
+    def analise_clusters(self, filename, distance=1):
+        temp_filename = filename.replace("clusters_", "speed_")
+        if Path(temp_filename).exists():
+            speed_frame = loading.load_bus_speeds(temp_filename)
+        else:
+            self.analise_speed(temp_filename)
+            speed_frame = loading.load_bus_speeds(temp_filename)
         speed_frame = speed_frame.query("100>Velocity>50")
         list_of_clusters = []
         for index, loc in speed_frame.iterrows():
@@ -87,7 +97,9 @@ class Analysis:
             speed = tempFrame["Velocity"].mean()
             occurrences = tempFrame.count()[0]
             clusters_info.append([location, speed, occurrences])
-        return [clusters, clusters_info]
+
+        with open("info_" + filename, "w") as file:
+            json.dump(clusters_info, file)
 
     def is_near(self, schedule_row):
         """ Sprawdzenie, czy wokół danego przystanku (schedule_row) był autobus tej linii i tej brygady,
@@ -113,7 +125,10 @@ class Analysis:
                 return 0
         return 1
 
-    def check_punctuality(self):
+    def check_punctuality(self, filename):
+        if Path(filename).exists():
+            return loading.load_json(filename)
+
         logging.info("Starting punctuality check")
         schedule_frame = self.schedule
         logging.info("Loaded schedules")
@@ -130,7 +145,8 @@ class Analysis:
                               1: (filtered_schedule["punctuality"] == 1).count()}
 
         logging.info("Finished analysis")
-        return on_time_statistics
+        with open(filename, "w") as file:
+            json.dump(on_time_statistics, file)
 
 
 if __name__ == '__main__':
@@ -147,4 +163,4 @@ if __name__ == '__main__':
 
     analysis_pd = Analysis(bus_positions_pd, stop_locations_pd, schedule_pd)
 
-    logging.info(analysis_pd.check_punctuality())
+    logging.info(analysis_pd.check_punctuality("../data/punctuality_2024-02-17.json"))

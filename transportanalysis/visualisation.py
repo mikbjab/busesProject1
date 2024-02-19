@@ -30,7 +30,7 @@ class DataVisual:
 
     @classmethod
     def clusters(cls, clusters):
-        info = clusters[1]
+        info = clusters
         for cluster_info in info:
             text = f"Lokalizacja: {cluster_info[0]}\n" \
                    f"Średnia prędkość: {cluster_info[1]}\n" \
@@ -53,7 +53,8 @@ if __name__ == '__main__':
     analysis = da.Analysis(loading.load_bus_positions("../data/data_2024-02-17.json"),
                            loading.load_stop_location("../data/stops_locations_10-01-2024.json"),
                            loading.load_schedule("../data/schedules_08-02-2024.json"))
-    DataVisual.show_speed_histogram(analysis.analise_speed()[0])
-    DataVisual.clusters(analysis.analise_clusters())
-    DataVisual.speeding_map(analysis.analise_speed(50)[0])
+    analysis.analise_speed("../data/speed_data_2024-02-17.json")
+    DataVisual.show_speed_histogram(analysis.analise_speed("../data/speed_data_2024-02-17.json")[0])
+    DataVisual.clusters(analysis.analise_clusters("../data/clusters_data_2024-02-17.json"))
+    DataVisual.speeding_map(analysis.analise_speed("../data/speed_data_2024-02-17.json",50)[0])
     DataVisual.save_map()

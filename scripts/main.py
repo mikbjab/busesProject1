@@ -16,14 +16,15 @@ def main():
 
     args = parser.parse_args()
     analysis = da.Analysis(loading.load_bus_positions(args.buses_positions),
-                           loading.load_stop_location("../data/stops_locations_10-01-2024.json"),
-                           loading.load_schedule("../data/schedules_08-02-2024.json"))
+                           loading.load_stop_location("data/stops_locations_2024-02-18.json"),
+                           loading.load_schedule("data/schedules_2024-02-19.json"))
     if args.speed:
         analysis.analise_speed(args.buses_positions.replace("data_","speed_data_"),50)
         dv.DataVisual.speeding_map(loading.load_bus_speeds(args.buses_positions.replace("data_","speed_data_")))
     if args.clusters:
-        analysis.analise_clusters(args.buses_positions.replace("data_", "clusters_data_"))
-        dv.DataVisual.clusters(loading.load_json(args.buses_positions.replace("data_", "clusters_data_")))
+        cluster_filename=args.buses_positions.replace("data_", "clusters_data_")
+        analysis.analise_clusters(cluster_filename)
+        dv.DataVisual.clusters(loading.load_clusters_pickle(cluster_filename))
     if args.speed or args.clusters:
         dv.DataVisual.save_map()
     if args.punctuality:

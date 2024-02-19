@@ -61,13 +61,14 @@ class Analysis:
         velocity_frame = pd.concat(result, ignore_index=True)
 
         velocity_frame.query(f"100>Velocity>{min_speed}").to_json(filename, orient="records")
-        with open("info_" + filename, "w") as file:
+        with open(filename.replace("data_","info_data_"), "w") as file:
             json.dump(speeding_buses, file)
 
     def analise_clusters(self, filename, distance=1):
         temp_filename = filename.replace("clusters_", "speed_")
         if Path(temp_filename).exists():
             speed_frame = loading.load_bus_speeds(temp_filename)
+            print("Wykorzystano poprzednie obliczenia prędkości")
         else:
             self.analise_speed(temp_filename)
             speed_frame = loading.load_bus_speeds(temp_filename)
@@ -95,10 +96,10 @@ class Analysis:
             tempFrame = pd.DataFrame(cluster, columns=["Lat", "Lon", "Velocity", "VehicleNumber"])
             location = [tempFrame["Lat"].mean(), tempFrame["Lon"].mean()]
             speed = tempFrame["Velocity"].mean()
-            occurrences = tempFrame.count()[0]
-            clusters_info.append([location, speed, occurrences])
+            occurrences = tempFrame.count().iloc[0]
+            clusters_info.append([float(location[0]),float(location[1]), float(speed), int(occurrences)])
 
-        with open("info_" + filename, "w") as file:
+        with open(filename, "w") as file:
             json.dump(clusters_info, file)
 
     def is_near(self, schedule_row):
@@ -163,4 +164,4 @@ if __name__ == '__main__':
 
     analysis_pd = Analysis(bus_positions_pd, stop_locations_pd, schedule_pd)
 
-    logging.info(analysis_pd.check_punctuality("../data/punctuality_2024-02-17.json"))
+    logging.info(analysis_pd.analise_clusters("../data/clusters_data_2024-02-17.json"))

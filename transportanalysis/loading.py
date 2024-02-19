@@ -69,8 +69,8 @@ def load_bus_speeds(filename):
 
 def load_json(filename):
     with open(filename) as file:
-        clusters = json.load(file)
-        return clusters
+        data = json.load(file)
+        return data
 
 
 def load_stop_lines(filename):

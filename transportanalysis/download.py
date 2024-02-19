@@ -99,7 +99,7 @@ class DataRetrieval:
         data_path = cls.project_path.joinpath("data")
         if not data_path.exists():
             data_path.mkdir()
-        stops_lines.to_json(data_path.joinpath(f"stops_lines{datetime.datetime.now().strftime('_%d-%m-%Y.json')}"),
+        stops_lines.to_json(data_path.joinpath(f"stops_lines{datetime.datetime.now().strftime('_%Y-%m-%d.json')}"),
                             orient="columns")
 
     @classmethod

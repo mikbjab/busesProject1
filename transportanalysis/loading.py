@@ -1,4 +1,6 @@
 import json
+import os
+import time
 
 import pandas as pd
 
@@ -81,11 +83,12 @@ def load_stop_lines(filename):
 
 
 def load_date_from_file(filename):
-    return filename[-15:-5]
+    t = time.strptime(time.ctime(os.path.getmtime(filename)))
+    return str(time.strftime("%Y-%m-%d",t))
 
 
-def change_time_format(time):
-    time_list = time.split(":")
+def change_time_format(temp_time):
+    time_list = temp_time.split(":")
     if int(time_list[0]) >= 24:
         time_list[0] = str(int(time_list[0]) - 24)
     return ":".join(time_list)
@@ -94,3 +97,12 @@ def change_time_format(time):
 def change_hours(schedule):
     schedule["czas"] = schedule["czas"].apply(change_time_format)
     schedule["czas"] = pd.to_datetime(schedule["czas"], format="%H:%M:%S")
+
+
+def find_latest_file(filepath, name):
+    files = os.listdir(filepath)
+    paths = []
+    for basename in files:
+        if name in basename:
+            paths.append(os.path.join(filepath, basename))
+    return max(paths, key=os.path.getctime)

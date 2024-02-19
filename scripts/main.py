@@ -1,4 +1,6 @@
 import argparse
+from pathlib import Path
+
 import transportanalysis.analysis as da
 import transportanalysis.visualisation as dv
 from transportanalysis import loading
@@ -15,21 +17,27 @@ def main():
                                                                          "given period")
 
     args = parser.parse_args()
+
+    file_path = Path(__file__).parent
+    data_dir_path = file_path.joinpath("data")
     analysis = da.Analysis(loading.load_bus_positions(args.buses_positions),
-                           loading.load_stop_location("data/stops_locations_2024-02-18.json"),
-                           loading.load_schedule("data/schedules_2024-02-19.json"))
+                           loading.load_stop_location(loading.find_latest_file(data_dir_path, "stops_locations")),
+                           loading.load_schedule(loading.find_latest_file(data_dir_path, "schedules")))
+
     if args.speed:
-        analysis.analise_speed(args.buses_positions.replace("data_","speed_data_"),50)
-        dv.DataVisual.speeding_map(loading.load_bus_speeds(args.buses_positions.replace("data_","speed_data_")))
+        speed_filename=args.buses_positions.replace("data_", "speed_data_")
+        analysis.analise_speed(speed_filename, 50)
+        dv.DataVisual.speeding_map(loading.load_bus_speeds(speed_filename))
     if args.clusters:
-        cluster_filename=args.buses_positions.replace("data_", "clusters_data_")
+        cluster_filename = args.buses_positions.replace("data_", "clusters_data_")
         analysis.analise_clusters(cluster_filename)
-        dv.DataVisual.clusters(loading.load_clusters_pickle(cluster_filename))
+        dv.DataVisual.clusters(loading.load_json(cluster_filename))
     if args.speed or args.clusters:
         dv.DataVisual.save_map()
     if args.punctuality:
-        analysis.check_punctuality(args.buses_positions.replace("data_","punctuality_"))
-        dv.DataVisual.show_punctuality(analysis.check_punctuality(args.buses_positions.replace("data_","punctuality_")))
+        punctuality_filename=args.buses_positions.replace("data_", "punctuality_")
+        analysis.check_punctuality(punctuality_filename)
+        dv.DataVisual.show_punctuality(analysis.check_punctuality(punctuality_filename))
 
 
 if __name__ == "__main__":
